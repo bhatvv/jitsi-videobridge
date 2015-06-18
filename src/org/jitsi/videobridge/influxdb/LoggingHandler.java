@@ -396,10 +396,6 @@ public class LoggingHandler
             connection.setRequestMethod("POST");
             connection.setRequestProperty("Content-type",
                 "application/json");
-            
-            
-            logger.info(" ****************************************** "  );
-            
 
             connection.setDoOutput(true);
             DataOutputStream outputStream
@@ -415,12 +411,7 @@ public class LoggingHandler
         }
         catch (IOException ioe)
         {
-            logger.info("############################################################");
-        	
-        	logger.info("Failed to post to influxdb: " + ioe);
-            
-            
-            
+            logger.info("Failed to post to influxdb: " + ioe);
         }
     }
 
