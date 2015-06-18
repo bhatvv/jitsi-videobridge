@@ -216,12 +216,6 @@ public class IceUdpTransportManager
     private final DtlsControlImpl dtlsControl;
 
     /**
-     * The <tt>AbstractRTPConnector</tt> which this transport manager creates
-     * for the purposes of DTLS.
-     */
-    private AbstractRTPConnector rtpConnector;
-
-    /**
      * The <tt>Agent</tt> which implements the ICE protocol and which is used
      * by this instance to implement the Jingle ICE-UDP transport.
      */
@@ -465,8 +459,6 @@ public class IceUdpTransportManager
     private void appendVideobridgeHarvesters(Agent iceAgent,
                                              boolean rtcpmux)
     {
-        boolean enableDynamicHostHarvester = true;
-
         if (rtcpmux)
         {
             initializeStaticHarvesters();
@@ -474,17 +466,9 @@ public class IceUdpTransportManager
             if (tcpHostHarvester != null)
                 iceAgent.addCandidateHarvester(tcpHostHarvester);
             if (singlePortHarvesters != null)
-            {
                 for (CandidateHarvester harvester : singlePortHarvesters)
-                {
                     iceAgent.addCandidateHarvester(harvester);
-                    enableDynamicHostHarvester = false;
-                }
-            }
         }
-
-        // Use dynamic ports iff we're not sing "single port".
-        iceAgent.setUseHostHarvester(enableDynamicHostHarvester);
 
         AwsCandidateHarvester awsHarvester = null;
         //does this look like an Amazon AWS EC2 machine?
@@ -628,12 +612,6 @@ public class IceUdpTransportManager
             {
                 dtlsControl.start(null); //stop
                 dtlsControl.cleanup(this);
-            }
-
-            if (rtpConnector != null)
-            {
-                rtpConnector.close();
-                rtpConnector = null;
             }
 
             //DatagramSocket[] datagramSockets = getStreamConnectorSockets();
@@ -1377,7 +1355,7 @@ public class IceUdpTransportManager
             return
                 getTCPStreamConnector(
                         rtpChannel,
-                        new Socket[]{tcpSocket0, tcpSocket1});
+                        new Socket[] { tcpSocket0, tcpSocket1 });
         }
     }
 
@@ -1945,11 +1923,7 @@ public class IceUdpTransportManager
         }
 
         StreamConnector streamConnector;
-        if (rtpConnector != null)
-        {
-            rtpConnector.close();
-            logger.warn("More than one RTPConnector. Closing the old one.");
-        }
+        AbstractRTPConnector rtpConnector;
 
         DatagramSocket udpSocket = iceSockets[0].getUDPSocket();
         if (udpSocket != null)
@@ -2087,15 +2061,6 @@ public class IceUdpTransportManager
                     "ICE failed",
                     OperationFailedException.GENERAL_ERROR);
         }
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public boolean isConnected()
-    {
-        return iceConnected;
     }
 
     /**
