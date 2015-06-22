@@ -15,7 +15,11 @@
  */
 package org.jitsi.videobridge.xmpp;
 
+import java.io.StringReader;
 import java.util.*;
+
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
 
 import net.java.sip.communicator.impl.protocol.jabber.*;
 import net.java.sip.communicator.impl.protocol.jabber.extensions.colibri.*;
@@ -25,6 +29,11 @@ import org.jitsi.videobridge.*;
 import org.jitsi.videobridge.osgi.*;
 import org.jivesoftware.smack.packet.*;
 import org.osgi.framework.*;
+import org.w3c.dom.Attr;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.NamedNodeMap;
+import org.w3c.dom.Node;
 import org.xmpp.component.*;
 import org.xmpp.packet.*;
 import org.xmpp.packet.IQ;
@@ -157,6 +166,15 @@ public class ComponentImpl
     {
         return bundleContext;
     }
+    
+    
+    private static String roomName;
+
+    public static String getRoomName() {
+		return roomName;
+	}
+    
+    
 
     /**
      * Gets the description of this <tt>Component</tt>.
@@ -291,8 +309,54 @@ public class ComponentImpl
     {
         try
         {
-            logd("RECV: " + iq.toXML());
+            
+            
+            logger.info("######################"+iq+"##########################\n");
+            
+            logger.info(iq.toString());
+            
+            logd("\nRECV: " + iq.toXML());
+           
+            DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+            DocumentBuilder builder = factory.newDocumentBuilder();
+            org.xml.sax.InputSource inputSource = new org.xml.sax.InputSource(new StringReader(iq.toXML()));
+            
+            Document doc = builder.parse(inputSource);
+            
+            Element root = doc.getDocumentElement();
+           // logger.info("@@@@@"+root.getNodeName()+"@@@@@");
+            
+            Node node1 = root.getFirstChild();
+           // logger.info("@@@@@"+node1.getNodeName()+"@@@@@");
+            
+            Node node2 = node1.getFirstChild();
+           // logger.info("@@@@@"+node2.getNodeName()+"@@@@@");
+            
+            Node node3 = node2.getFirstChild();
+           // logger.info("@@@@@"+node3.getNodeName()+"@@@@@");
+            
+    		logger.info("List attributes for node: " + node3.getNodeName());
+            NamedNodeMap attributes = node3.getAttributes();
+           
+            int num = attributes.getLength();
+         
+            for (int i =0 ; i < attributes.getLength();i++)
+                { 
+                	Attr attr = (Attr) attributes.item(i);
+            	    String attrName = attr.getNodeName();
+       
+            	    String attrValue = attr.getNodeValue();
+        	 
+            	    if(attr.getNodeName()=="roomname")
+            	    {
+            		    roomName =attr.getNodeValue();
+            	    }
 
+        	 
+            	    logger.info("Found attribute: " + attrName + " with value: " + attrValue);
+            	   //logger.info("******"+roomName+"*******");
+                }
+           
             org.jivesoftware.smack.packet.IQ smackIQ = IQUtils.convert(iq);
             org.jivesoftware.smack.packet.IQ resultSmackIQ = handleIQ(smackIQ);
             IQ resultIQ;

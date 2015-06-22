@@ -310,7 +310,21 @@ public class Videobridge
      */
     private String generateConferenceID()
     {
-        return Long.toHexString(System.currentTimeMillis() + RANDOM.nextLong());
+    	String roomName = ComponentImpl.getRoomName();
+    	
+    	String array[] = roomName.split("@");
+    	String room = array[0];
+    	
+    	//	logger.info("******"+room+"*******");
+    	
+    	
+    	
+    	return (room+System.currentTimeMillis());
+    	
+    	
+    	
+    	
+       // return Long.toHexString(System.currentTimeMillis() + RANDOM.nextLong());
     }
 
     /**
