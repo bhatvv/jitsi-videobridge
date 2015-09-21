@@ -418,8 +418,7 @@ public class Content
                 rtcpFeedbackMessageSender = null;
             }
 
-            if (logger.isInfoEnabled())
-            {
+            
                 Videobridge videobridge = conference.getVideobridge();
 
             /*    logger.info(
@@ -436,7 +435,7 @@ public class Content
                 
                 
                 
-            }
+            
         }
     }
 
@@ -701,7 +700,6 @@ public class Content
     {
         return mediaType;
     }
-
 
     /**
      * Gets the <tt>MediaDevice</tt> which mixes the media received by the

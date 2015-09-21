@@ -37,7 +37,6 @@ import org.jitsi.impl.neomedia.*;
 import org.jitsi.impl.neomedia.transform.dtls.*;
 import org.jitsi.service.configuration.*;
 import org.jitsi.service.neomedia.*;
-
 import org.jitsi.videobridge.eventadmin.*;
 import org.jitsi.videobridge.xmpp.ComponentImpl;
 import org.osgi.framework.*;
@@ -948,8 +947,8 @@ public class IceUdpTransportManager
         String hash = dtlsControl.getLocalFingerprintHashFunction();
 
         DtlsFingerprintPacketExtension fingerprintPE
-                = transportPE.getFirstChildOfType(
-                DtlsFingerprintPacketExtension.class);
+            = transportPE.getFirstChildOfType(
+                    DtlsFingerprintPacketExtension.class);
 
         if (fingerprintPE == null)
         {

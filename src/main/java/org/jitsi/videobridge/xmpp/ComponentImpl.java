@@ -23,10 +23,14 @@ import javax.xml.parsers.DocumentBuilderFactory;
 
 import net.java.sip.communicator.impl.protocol.jabber.*;
 import net.java.sip.communicator.impl.protocol.jabber.extensions.colibri.*;
+import net.java.sip.communicator.util.*;
 
+import org.jitsi.service.configuration.*;
 import org.jitsi.service.version.*;
 import org.jitsi.videobridge.*;
 import org.jitsi.videobridge.osgi.*;
+import org.jitsi.xmpp.component.*;
+import org.jitsi.xmpp.util.*;
 import org.jivesoftware.smack.packet.*;
 import org.osgi.framework.*;
 import org.w3c.dom.Attr;
@@ -46,7 +50,7 @@ import org.xmpp.packet.Packet;
  * @author Lyubomir Marinov
  */
 public class ComponentImpl
-    extends AbstractComponent
+    extends ComponentBase
     implements BundleActivator
 {
     private static final org.jitsi.util.Logger logger
@@ -167,7 +171,6 @@ public class ComponentImpl
         return bundleContext;
     }
     
-    
     private static String roomName;
 
     public static String getRoomName() {
@@ -181,7 +184,6 @@ public class ComponentImpl
     public static String getEndPoint() {
 		return endPoint;
 	}
-    
 
     /**
      * Gets the description of this <tt>Component</tt>.
@@ -318,63 +320,82 @@ public class ComponentImpl
         {
             
             
-        //logger.info("###### RECV ########"+iq+"##########################\n");
+            //logger.info("###### RECV ########"+iq+"##########################\n");
             
-          //logger.info(iq.toString());
-            
-           //logd("\nRECV: " + iq.toXML());
-           
             DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
             DocumentBuilder builder = factory.newDocumentBuilder();
             org.xml.sax.InputSource inputSource = new org.xml.sax.InputSource(new StringReader(iq.toXML()));
-            
             Document doc = builder.parse(inputSource);
             
             Element root = doc.getDocumentElement();
-           // logger.info("@@@@@"+root.getNodeName()+"@@@@@");
+            // logger.info("@@@@@"+root.getNodeName()+"@@@@@");
             
-            Node node1 = root.getFirstChild();
-           // logger.info("@@@@@"+node1.getNodeName()+"@@@@@");
+            if(root!=null)
+            {
+	            Node node1 = root.getFirstChild();
+	            // logger.info("@@@@@"+node1.getNodeName()+"@@@@@");
+	            
+	            if(node1!=null)
+	            {
+	            	
+	            	NamedNodeMap attributes = node1.getAttributes();
+	 	           
+		           	int num = attributes.getLength();
+		         
+		                for (int i =0 ; i < num; i++)
+		                   { 
+		                		Attr attr = (Attr) attributes.item(i);
+		            	    		String attrName = attr.getNodeName();
+		       
+		            	    		String attrValue = attr.getNodeValue();
+		        	 
+		            	    		if(attr.getNodeName()=="name")
+		            	    		{
+		            		    		roomName =attr.getNodeValue();
+		            	    		}
+		            	    		
+		            	    		//logger.info("Found attribute: " + attrName + " with value: " + attrValue);
+		            	    		//logger.info("******"+roomName+"*******");
+		            	    		
+		           	        }
+	            	
+	            
+	            
             
-            Node node2 = node1.getFirstChild();
-           // logger.info("@@@@@"+node2.getNodeName()+"@@@@@");
-            
-            Node node3 = node2.getFirstChild();
-           // logger.info("@@@@@"+node3.getNodeName()+"@@@@@");
-            
-    	 	//logger.info("List attributes for node: " + node3.getNodeName());
-	        if(node3!=null)
-            {   
-		    	NamedNodeMap attributes = node3.getAttributes();
-	           
-	           	int num = attributes.getLength();
-	         
-	                for (int i =0 ; i < attributes.getLength();i++)
-	                   { 
-	                		Attr attr = (Attr) attributes.item(i);
-	            	    		String attrName = attr.getNodeName();
-	       
-	            	    		String attrValue = attr.getNodeValue();
-	        	 
-	            	    		if(attr.getNodeName()=="roomname")
-	            	    		{
-	            		    		roomName =attr.getNodeValue();
-	            	    		}
-	            	    		
-	            	    		if(attr.getNodeName()=="endpoint")
-	            	    		{
-	            	    			endPoint = attr.getNodeValue();
-	            	    		}
-	            	    		
-	            	    		
-	            	    		
-	            	    		
-	            	    		
-	            	    		
-	            	     //logger.info("Found attribute: " + attrName + " with value: " + attrValue);
-	            	     //logger.info("******"+roomName+"*******");
-	           	        }
-	         }
+			        Node node2 = node1.getFirstChild();
+	                     //logger.info("@@@@@"+node2.getNodeName()+"@@@@@");
+	                	if(node2!=null)
+	                	{
+				        Node node3 = node2.getFirstChild();
+		                     //logger.info("@@@@@"+node3.getNodeName()+"@@@@@");
+		            
+		    	 	    
+			            	if(node3!=null)
+		                	{   
+					    	NamedNodeMap attributes1 = node3.getAttributes();
+				           
+				           	int num1 = attributes1.getLength();
+				         
+				                for (int i =0 ; i < num1; i++)
+				                   { 
+				                		    Attr attr1 = (Attr) attributes1.item(i);
+				                		    
+				            	    		String attrName1 = attr1.getNodeName();
+				                            String attrValue1 = attr1.getNodeValue();
+				        	 
+				            	    		if(attr1.getNodeName()=="endpoint")
+				            	    		{
+				            		    		endPoint =attr1.getNodeValue();
+				            	    		}
+				            	    		
+				            	    		//logger.info("Found attribute: " + attrName1 + " with value: " + attrValue1);
+				   	            	        //logger.info("******"+roomName+"*******");
+			            	    		
+			            	    	     }
+		                         }
+	                         } 
+	             }
+            }
            
             org.jivesoftware.smack.packet.IQ smackIQ = IQUtils.convert(iq);
             org.jivesoftware.smack.packet.IQ resultSmackIQ = handleIQ(smackIQ);
@@ -389,17 +410,17 @@ public class ComponentImpl
                 resultIQ = IQUtils.convert(resultSmackIQ);
 
               // logd("SENT: " + resultIQ.toXML());
-              
             }
 
             return resultIQ;
+        
         }
         catch (Exception e)
         {
             loge(e);
             throw e;
         }
-    }
+ }
 
     /**
      * Handles an <tt>org.jivesoftware.smack.packet.IQ</tt> stanza of type
@@ -700,6 +721,17 @@ public class ComponentImpl
 
         if (!components.contains(this))
             bundleContext.registerService(ComponentImpl.class, this, null);
+
+        // Schedule ping task
+        // note: the task if stopped automatically on component shutdown
+        ConfigurationService config
+            = ServiceUtils.getService(
+                    bundleContext, ConfigurationService.class);
+
+        loadConfig(config, "org.jitsi.videobridge");
+
+        if (!isPingTaskStarted())
+            startPingTask();
     }
 
     /**

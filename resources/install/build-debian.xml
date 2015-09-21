@@ -95,6 +95,7 @@
         <copy todir="${debian.dir}/usr/share/jitsi-videobridge/lib"
               overwrite="true" includeEmptyDirs="No">
             <fileset dir="lib/">
+                <exclude name="logging.properties"/>
                 <exclude name="native/macos*/*"/>
                 <exclude name="native/windows*/*"/>
                 <exclude name="native/${exclude-dir}/*"/>
@@ -102,6 +103,9 @@
         </copy>
         <copy file="jitsi-videobridge.jar"
               todir="${debian.dir}/usr/share/jitsi-videobridge"
+              overwrite="true"/>
+        <copy file="lib/logging.properties"
+              todir="${debian.dir}/etc/jitsi/videobridge"
               overwrite="true"/>
         <copy file="resources/install/${include-dir}/jvb.sh"
               todir="${debian.dir}/usr/share/jitsi-videobridge"

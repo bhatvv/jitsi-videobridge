@@ -23,13 +23,14 @@ import java.text.*;
 import java.util.*;
 
 import net.java.sip.communicator.impl.protocol.jabber.extensions.colibri.*;
+import net.java.sip.communicator.impl.protocol.jabber.extensions.colibri.ColibriConferenceIQ.Recording.*;
 import net.java.sip.communicator.util.*;
 
 import org.jitsi.service.configuration.*;
 import org.jitsi.service.libjitsi.*;
 import org.jitsi.service.neomedia.*;
 import org.jitsi.service.neomedia.recording.*;
-
+import org.jitsi.util.Logger;
 import org.jitsi.util.event.*;
 import org.jitsi.videobridge.eventadmin.*;
 import org.jitsi.videobridge.xmpp.ComponentImpl;
@@ -96,6 +97,11 @@ public class Conference
      * The (unique) identifier/ID of this instance.
      */
     private final String id;
+
+    /**
+     * The world readable name of this instance if any.
+     */
+    private String name;
 
     /**
      * The time in milliseconds of the last activity related to this
@@ -386,7 +392,7 @@ public class Conference
         if (isRecording())
         {
             ColibriConferenceIQ.Recording recordingIQ
-                = new ColibriConferenceIQ.Recording(true);
+                = new ColibriConferenceIQ.Recording(State.ON.toString());
             recordingIQ.setDirectory(getRecordingDirectory());
             iq.setRecording(recordingIQ);
         }
@@ -434,6 +440,7 @@ public class Conference
     public void describeShallow(ColibriConferenceIQ iq)
     {
         iq.setID(getID());
+        iq.setName(getName());
     }
 
 
@@ -1054,7 +1061,8 @@ public class Conference
         if (this.recordingDirectory == null) {
             SimpleDateFormat dateFormat
                     = new SimpleDateFormat("yyyy-MM-dd.HH-mm-ss.");
-            this.recordingDirectory = dateFormat.format(new Date()) + getID();
+            this.recordingDirectory = dateFormat.format(new Date()) + getID()
+                + ((name != null) ? "_" + name : "");
         }
 
         return this.recordingDirectory;
@@ -1533,6 +1541,9 @@ public class Conference
                 endpoints = speechActivity.getEndpoints();
                 for (Channel channel : content.getChannels())
                 {
+                    if (!(channel instanceof RtpChannel))
+                        continue;
+
                     RtpChannel rtpChannel = (RtpChannel) channel;
                     List<Endpoint> channelEndpointsToAskForKeyframes
                         = rtpChannel.speechActivityEndpointsChanged(endpoints);
@@ -1643,5 +1654,22 @@ public class Conference
                 }
             }
         }
+    }
+
+    /**
+     * Sets the conference name.
+     * @param name the new name.
+     */
+    public void setName(String name)
+    {
+        this.name = name;
+    }
+
+    /**
+     * Gets the conference name.
+     */
+    public String getName()
+    {
+        return name;
     }
 }

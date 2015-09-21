@@ -20,17 +20,17 @@ import java.util.regex.*;
 
 import net.java.sip.communicator.impl.protocol.jabber.extensions.*;
 import net.java.sip.communicator.impl.protocol.jabber.extensions.colibri.*;
+import net.java.sip.communicator.impl.protocol.jabber.extensions.colibri.ColibriConferenceIQ.Recording.*;
 import net.java.sip.communicator.impl.protocol.jabber.extensions.jingle.*;
 import net.java.sip.communicator.service.shutdown.*;
 import net.java.sip.communicator.util.*;
 
 import org.ice4j.ice.harvest.*;
 import org.ice4j.stack.*;
-
 import org.jitsi.service.configuration.*;
 import org.jitsi.service.neomedia.*;
 import org.jitsi.util.*;
-
+import org.jitsi.util.Logger;
 import org.jitsi.videobridge.eventadmin.*;
 import org.jitsi.videobridge.osgi.*;
 import org.jitsi.videobridge.pubsub.*;
@@ -116,7 +116,7 @@ public class Videobridge
      * {@link Conference} and {@link Channel} IDs in order to minimize busy
      * waiting for the value of {@link System#currentTimeMillis()} to change.
      */
-    static final Random RANDOM = new Random();
+    public static final Random RANDOM = new Random();
 
     /**
      * The REST-like HTTP/JSON API of Jitsi Videobridge.
@@ -153,6 +153,14 @@ public class Videobridge
         = "org.jitsi.videobridge.shutdown.ALLOWED_SOURCE_REGEXP";
 
     /**
+     * The property that specifies entities authorized to operate the bridge.
+     * For XMPP API this is "from" JID. In case of REST the source IP is being
+     * copied into the "from" field of the IQ.
+     */
+    static final String AUTHORIZED_SOURCE_REGEXP_PNAME
+        = "org.jitsi.videobridge.AUTHORIZED_SOURCE_REGEXP";
+
+    /**
      * The XMPP API of Jitsi Videobridge.
      */
     public static final String XMPP_API = "xmpp";
@@ -169,6 +177,12 @@ public class Videobridge
     {
         return ServiceUtils2.getServices(bundleContext, Videobridge.class);
     }
+
+    /**
+     * The pattern used to filter entities that are allowed to operate
+     * the videobridge.
+     */
+    private Pattern authorizedSourcePattern;
 
     /**
      * The (OSGi) <tt>BundleContext</tt> in which this <tt>Videobridge</tt> has
@@ -256,8 +270,7 @@ public class Videobridge
         logger.audit("RTCServer:" +System.getProperty(VideobridgeManager.HOSTNAME_PNAME)+", MucID:"
     			+ComponentImpl.getRoomName() + ", RoutingID :" +ComponentImpl.getEndPoint() +", Message:"+
   			  "Created conference " + conference.getID()
-                        + ". " + getConferenceCountString());
-       
+                        + ". " + getConferenceCountString());      
 
         return conference;
     }
@@ -315,21 +328,11 @@ public class Videobridge
      */
     private String generateConferenceID()
     {
-    	String roomName = ComponentImpl.getRoomName();
+    	 String room = ComponentImpl.getRoomName();
     	
-    	String array[] = roomName.split("@");
-    	String room = array[0];
+    	 return (room+System.currentTimeMillis());
     	
-    	//	logger.info("******"+room+"*******");
-    	
-    	
-    	
-    	return (room+System.currentTimeMillis());
-    	
-    	
-    	
-    	
-       // return Long.toHexString(System.currentTimeMillis() + RANDOM.nextLong());
+		 //return Long.toHexString(System.currentTimeMillis() + RANDOM.nextLong());
     }
 
     /**
@@ -607,6 +610,14 @@ public class Videobridge
                 conferenceIQ,
                 new XMPPError(XMPPError.Condition.not_authorized));
         }
+        else if (authorizedSourcePattern != null &&
+                 (focus == null ||
+                  !authorizedSourcePattern.matcher(focus).matches()))
+        {
+            return IQ.createErrorResponse(
+                conferenceIQ,
+                new XMPPError(XMPPError.Condition.not_authorized));
+        }
         else
         {
             /*
@@ -629,7 +640,9 @@ public class Videobridge
                 }
             }
             else
+            {
                 conference = getConference(id, focus);
+            }
 
             if (conference != null)
                 conference.setLastKnownFocus(conferenceIQ.getFrom());
@@ -649,6 +662,10 @@ public class Videobridge
         }
         else
         {
+            String name = conferenceIQ.getName();
+            if (name != null)
+                conference.setName(name);
+
             responseConferenceIQ = new ColibriConferenceIQ();
             conference.describeShallow(responseConferenceIQ);
 
@@ -669,10 +686,14 @@ public class Videobridge
 
                     if (tokenIQ.equals(tokenConfig))
                     {
-                        boolean recording
-                            = conference.setRecording(recordingIQ.getState());
+                        State recState = recordingIQ.getState();
+
+                        boolean recording = conference.setRecording(
+                            (recState.equals(State.ON)
+                                || recState.equals(State.PENDING))
+                                ? true : false);
                         ColibriConferenceIQ.Recording responseRecordingIq
-                                = new ColibriConferenceIQ.Recording(recording);
+                                = new ColibriConferenceIQ.Recording(recState);
 
                         if (recording)
                         {
@@ -1147,6 +1168,38 @@ public class Videobridge
     }
 
     /**
+     * Configures regular expression used to filter users authorized to manage
+     * conferences and trigger graceful shutdown(if separate pattern has not
+     * been configured).
+     * @param authorizedSourceRegExp regular expression string
+     */
+    public void setAuthorizedSourceRegExp(String authorizedSourceRegExp)
+    {
+        if (!StringUtils.isNullOrEmpty(authorizedSourceRegExp))
+        {
+            authorizedSourcePattern
+                = Pattern.compile(authorizedSourceRegExp);
+
+            // If no shutdown regexp then authorized sources are also
+            // allowed trigger graceful shutdown
+            if (shutdownSourcePattern == null)
+                shutdownSourcePattern = authorizedSourcePattern;
+        }
+        else
+        // Turn off
+        {
+            if (shutdownSourcePattern == authorizedSourcePattern)
+            {
+                shutdownSourcePattern = authorizedSourcePattern = null;
+            }
+            else
+            {
+                authorizedSourcePattern = null;
+            }
+        }
+    }
+
+    /**
      * Starts this <tt>Videobridge</tt> in a specific <tt>BundleContext</tt>.
      *
      * @param bundleContext the <tt>BundleContext</tt> in which this
@@ -1187,6 +1240,26 @@ public class Videobridge
             {
                 logger.error(
                    "Error parsing enableGracefulShutdownMode sources reg expr: "
+                        + shutdownSourcesRegexp, exc);
+            }
+        }
+
+        String authorizedSourceRegexp
+            = (cfg == null)
+                    ? null : cfg.getString(AUTHORIZED_SOURCE_REGEXP_PNAME);
+        if (!StringUtils.isNullOrEmpty(authorizedSourceRegexp))
+        {
+            try
+            {
+                logger.info(
+                    "Authorized source regexp: " + authorizedSourceRegexp);
+
+                setAuthorizedSourceRegExp(authorizedSourceRegexp);
+            }
+            catch (PatternSyntaxException exc)
+            {
+                logger.error(
+                    "Error parsing authorized sources reg expr: "
                         + shutdownSourcesRegexp, exc);
             }
         }

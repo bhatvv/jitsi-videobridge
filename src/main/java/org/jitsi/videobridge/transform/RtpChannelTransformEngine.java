@@ -20,6 +20,7 @@ import org.jitsi.service.configuration.*;
 import org.jitsi.service.neomedia.*;
 import org.jitsi.util.*;
 import org.jitsi.videobridge.*;
+import org.jitsi.videobridge.rewriting.*;
 import org.jitsi.videobridge.rtcp.*;
 
 import java.util.*;
@@ -28,6 +29,7 @@ import java.util.*;
  * Implements a <tt>TransformEngine</tt> for a specific <tt>RtpChannel</tt>.
  *
  * @author Boris Grozev
+ * @author George Politis
  */
 public class RtpChannelTransformEngine
     extends TransformEngineChain
@@ -98,6 +100,11 @@ public class RtpChannelTransformEngine
     private RetransmissionRequester retransmissionRequester;
 
     /**
+     * The transformer which handles SSRC rewriting.
+     */
+    private SsrcRewritingEngine ssrcRewritingEngine;
+
+    /**
      * Initializes a new <tt>RtpChannelTransformEngine</tt> for a specific
      * <tt>RtpChannel</tt>.
      * @param channel the <tt>RtpChannel</tt>.
@@ -141,10 +148,8 @@ public class RtpChannelTransformEngine
         transformerList.add(absSendTime);
 
         boolean enableNackTermination = true;
-        
         if (conference != null)
         {
-           
             if (cfg != null)
                 enableNackTermination
                     = !cfg.getBoolean(DISABLE_NACK_TERMINATION_PNAME, false);
@@ -169,6 +174,13 @@ public class RtpChannelTransformEngine
             rtcpTransformEngine
                     = new RTCPTransformEngine(new Transformer[] {nackNotifier});
             transformerList.add(rtcpTransformEngine);
+        }
+
+        if (channel instanceof VideoChannel)
+        {
+            VideoChannel videoChannel = (VideoChannel) channel;
+            ssrcRewritingEngine = new SsrcRewritingEngine(videoChannel);
+            transformerList.add(ssrcRewritingEngine);
         }
 
         return
@@ -206,6 +218,17 @@ public class RtpChannelTransformEngine
     }
 
     /**
+     * Enables SSRC re-writing.
+     *
+     * @param enabled whether to enable or disable.
+     */
+    public void enableSsrcRewriting(boolean enabled)
+    {
+        if (ssrcRewritingEngine != null)
+            ssrcRewritingEngine.setEnabled(enabled);
+    }
+
+    /**
      * Checks whether retransmission requests are enabled for the
      * <tt>RtpChannel</tt>.
      * @return <tt>true</tt> if retransmission requests are enabled for the
@@ -214,5 +237,17 @@ public class RtpChannelTransformEngine
     public boolean retransmissionsRequestsEnabled()
     {
         return retransmissionRequester != null;
+    }
+
+    /**
+     * Gets a boolean value indicating whether SSRC re-writing is enabled or
+     * not.
+     *
+     * @return a boolean value indicating whether SSRC re-writing is enabled or
+     * not.
+     */
+    public boolean isSsrcRewritingEnabled()
+    {
+        return ssrcRewritingEngine.isEnabled();
     }
 }

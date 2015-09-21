@@ -144,6 +144,9 @@ final class JSONDeserializer
                 = channel.get(ColibriConferenceIQ.Channel.DIRECTION_ATTR_NAME);
             Object lastN
                 = channel.get(ColibriConferenceIQ.Channel.LAST_N_ATTR_NAME);
+            Object simulcastMode
+                    = channel.get(
+                    ColibriConferenceIQ.Channel.SIMULCAST_MODE_ATTR_NAME);
             Object receivingSimulcastLayer
                 = channel.get(
                         ColibriConferenceIQ.Channel.RECEIVING_SIMULCAST_LAYER);
@@ -178,6 +181,12 @@ final class JSONDeserializer
                 else
                     i = Integer.valueOf(lastN.toString());
                 channelIQ.setLastN(i);
+            }
+            // simulcastMode
+            if (simulcastMode != null)
+            {
+                channelIQ.setSimulcastMode(
+                        SimulcastMode.fromString(simulcastMode.toString()));
             }
             // receivingSimulcastLayer
             if (receivingSimulcastLayer != null)
@@ -625,13 +634,8 @@ final class JSONDeserializer
         if (state == null)
             return;
 
-        Boolean b
-                = (state instanceof Boolean)
-                ? (Boolean) state
-                : Boolean.valueOf(state.toString());
-
         ColibriConferenceIQ.Recording recordingIQ
-                = new ColibriConferenceIQ.Recording(b);
+                = new ColibriConferenceIQ.Recording(state.toString());
 
         Object token
             = recording.get(ColibriConferenceIQ.Recording.TOKEN_ATTR_NAME);

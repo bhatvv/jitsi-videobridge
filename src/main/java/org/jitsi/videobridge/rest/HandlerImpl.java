@@ -25,7 +25,6 @@ import net.java.sip.communicator.impl.protocol.jabber.extensions.colibri.*;
 import net.java.sip.communicator.util.*;
 
 import org.eclipse.jetty.server.*;
-import org.eclipse.jetty.server.handler.*;
 import org.jitsi.service.version.*;
 import org.jitsi.videobridge.*;
 import org.jitsi.videobridge.stats.*;
@@ -176,7 +175,7 @@ import org.osgi.framework.*;
  * @author Pawel Domas
  */
 class HandlerImpl
-    extends AbstractHandler
+    extends AbstractJSONHandler
 {
     /**
      * The HTTP resource which lists the JSON representation of the
@@ -191,19 +190,6 @@ class HandlerImpl
     private static final String DEFAULT_COLIBRI_TARGET = "/colibri/";
 
     /**
-     * The HTTP resource which returns the JSON representation of the
-     * <tt>Version</tt> of the <tt>Videobridge</tt>.
-     */
-    private static final String VERSION_TARGET = "/version";
-
-    /**
-     * The default suffix/extension of the HTTP resources which provide access
-     * to JSON representations of COLIBRI-related entities of
-     * <tt>Videobridge</tt>.
-     */
-    private static final String DEFAULT_JSON_TARGET = null;
-
-    /**
      * The HTTP resource which retrieves a JSON representation of the
      * <tt>DominantSpeakerIdentification</tt> of a <tt>Conference</tt> of
      * <tt>Videobridge</tt>.
@@ -212,35 +198,9 @@ class HandlerImpl
         = "dominant-speaker-identification";
 
     /**
-     * The HTTP GET method.
-     */
-    private static final String GET_HTTP_METHOD = "GET";
-
-    /**
-     * The MIME type of HTTP content in JSON format.
-     */
-    private static final String JSON_CONTENT_TYPE = "application/json";
-
-    /**
-     * The MIME type of HTTP content in JSON format with a charset.
-     */
-    private static final String JSON_CONTENT_TYPE_WITH_CHARSET
-        = JSON_CONTENT_TYPE + ";charset=UTF-8";
-
-    /**
      * The logger instance used by REST handler.
      */
     private static final Logger logger = Logger.getLogger(HandlerImpl.class);
-
-    /**
-     * The HTTP PATCH method.
-     */
-    private static final String PATCH_HTTP_METHOD = "PATCH";
-
-    /**
-     * The HTTP POST method.
-     */
-    private static final String POST_HTTP_METHOD = "POST";
 
     /**
      * The HTTP resource which is used to trigger graceful shutdown.
@@ -248,27 +208,16 @@ class HandlerImpl
     private static final String SHUTDOWN = "shutdown";
 
     /**
-     * The HTTP resource which list the JSON representation of the
+     * The HTTP resource which lists the JSON representation of the
      * <tt>VideobridgeStatistics</tt>s of <tt>Videobridge</tt>.
      */
     private static final String STATISTICS = "stats";
-
-    /**
-     * The <tt>BundleContext</tt> within which this instance is initialized.
-     */
-    private final BundleContext bundleContext;
 
     /**
      * The base HTTP resource of COLIBRI-related JSON representations of
      * <tt>Videobridge</tt>.
      */
     private String colibriTarget;
-
-    /**
-     * The suffix/extension of the HTTP resources which provide access to JSON
-     * representations of COLIBRI-related entities of <tt>Videobridge</tt>.
-     */
-    private String jsonTarget;
 
     /**
      * Indicates if graceful shutdown mode is enabled. If not then
@@ -278,24 +227,21 @@ class HandlerImpl
     private final boolean shutdownEnabled;
 
     /**
-     * Initializes a new <tt>HandlerImpl</tt> instance within a specific
-     * <tt>BundleContext</tt>.
+     * Initializes a new {@code HandlerImpl} instance within a specific
+     * {@code BundleContext}.
      *
-     * @param bundleContext the <tt>BundleContext</tt> within which the new
+     * @param bundleContext the {@code BundleContext} within which the new
      * instance is to be initialized
-     * @param enableShutdown <tt>true</tt> if graceful shutdown should be
-     *                       enabled
+     * @param enableShutdown {@code true} if graceful shutdown is to be
+     * enabled; otherwise, {@code false}
      */
     public HandlerImpl(BundleContext bundleContext, boolean enableShutdown)
     {
-        this.bundleContext = bundleContext;
+        super(bundleContext);
 
         colibriTarget = DEFAULT_COLIBRI_TARGET;
         if (!colibriTarget.endsWith("/"))
             colibriTarget += "/";
-        jsonTarget = DEFAULT_JSON_TARGET;
-        if ((jsonTarget != null) && !jsonTarget.startsWith("."))
-            jsonTarget = "." + jsonTarget;
 
         shutdownEnabled = enableShutdown;
     }
@@ -306,9 +252,11 @@ class HandlerImpl
      *
      * @param target the ID of the <tt>Conference</tt> of (the associated)
      * <tt>Videobridge</tt> to represent in JSON format
-     * @param baseRequest
-     * @param request
-     * @param response
+     * @param baseRequest the original unwrapped {@link Request} object
+     * @param request the request either as the {@code Request} object or a
+     * wrapper of that request
+     * @param response the response either as the {@code Response} object or a
+     * wrapper of that response
      * @throws IOException
      * @throws ServletException
      */
@@ -385,9 +333,11 @@ class HandlerImpl
     /**
      * Lists the <tt>Conference</tt>s of (the associated) <tt>Videobridge</tt>.
      *
-     * @param baseRequest
-     * @param request
-     * @param response
+     * @param baseRequest the original unwrapped {@link Request} object
+     * @param request the request either as the {@code Request} object or a
+     * wrapper of that request
+     * @param response the response either as the {@code Response} object or a
+     * wrapper of that response
      * @throws IOException
      * @throws ServletException
      */
@@ -433,9 +383,11 @@ class HandlerImpl
      * Retrieves a JSON representation of the
      * <tt>DominantSpeakerIdentification</tt> of a specific <tt>Conference</tt>.
      *
-     * @param baseRequest
-     * @param request
-     * @param response
+     * @param baseRequest the original unwrapped {@link Request} object
+     * @param request the request either as the {@code Request} object or a
+     * wrapper of that request
+     * @param response the response either as the {@code Response} object or a
+     * wrapper of that response
      * @throws IOException
      * @throws ServletException
      */
@@ -450,7 +402,11 @@ class HandlerImpl
         ConferenceSpeechActivity conferenceSpeechActivity
             = conference.getSpeechActivity();
 
-        if (conferenceSpeechActivity != null)
+        if (conferenceSpeechActivity == null)
+        {
+            response.setStatus(HttpServletResponse.SC_SERVICE_UNAVAILABLE);
+        }
+        else
         {
             JSONObject jsonObject
                 = conferenceSpeechActivity
@@ -465,54 +421,41 @@ class HandlerImpl
     }
 
     /**
-     * Gets a JSON representation of the <tt>Version</tt> of (the associated)
-     * <tt>Videobridge</tt>.
-     *
-     * @param response
-     * @throws IOException
-     * @throws ServletException
+     * {@inheritDoc}
      */
-    private void doGetVersionJSON(
+    @Override
+    protected void doGetHealthJSON(
+            Request baseRequest,
+            HttpServletRequest request,
             HttpServletResponse response)
         throws IOException,
                ServletException
     {
-        BundleContext bundleContext = getBundleContext();
-        if (bundleContext != null)
+        beginResponse(/* target */ null, baseRequest, request, response);
+
+        Videobridge videobridge = getVideobridge();
+
+        if (videobridge == null)
         {
-            VersionService versionService
-                = ServiceUtils.getService(bundleContext, VersionService.class);
-
-            if (versionService != null)
-            {
-                org.jitsi.service.version.Version currentVersion
-                    = versionService.getCurrentVersion();
-                JSONObject versionJSONObject = new JSONObject();
-
-                versionJSONObject.put(
-                    "name", currentVersion.getApplicationName());
-                versionJSONObject.put("version", currentVersion.toString());
-                versionJSONObject.put("os", System.getProperty("os.name"));
-
-                Writer writer = response.getWriter();
-
-                response.setStatus(HttpServletResponse.SC_OK);
-                versionJSONObject.writeJSONString(writer);
-
-                return;
-            }
+            response.setStatus(HttpServletResponse.SC_SERVICE_UNAVAILABLE);
+        }
+        else
+        {
+            Health.getJSON(videobridge, baseRequest, request, response);
         }
 
-        response.setStatus(HttpServletResponse.SC_SERVICE_UNAVAILABLE);
+        endResponse(/* target */ null, baseRequest, request, response);
     }
 
     /**
      * Gets a JSON representation of the <tt>VideobridgeStatistics</tt> of (the
      * associated) <tt>Videobridge</tt>.
      *
-     * @param baseRequest
-     * @param request
-     * @param response
+     * @param baseRequest the original unwrapped {@link Request} object
+     * @param request the request either as the {@code Request} object or a
+     * wrapper of that request
+     * @param response the response either as the {@code Response} object or a
+     * wrapper of that response
      * @throws IOException
      * @throws ServletException
      */
@@ -562,9 +505,11 @@ class HandlerImpl
      *
      * @param target the ID of the <tt>Conference</tt> to modify in (the
      * associated) <tt>Videobridge</tt>
-     * @param baseRequest
-     * @param request
-     * @param response
+     * @param baseRequest the original unwrapped {@link Request} object
+     * @param request the request either as the {@code Request} object or a
+     * wrapper of that request
+     * @param response the response either as the {@code Response} object or a
+     * wrapper of that response
      * @throws IOException
      * @throws ServletException
      */
@@ -678,9 +623,11 @@ class HandlerImpl
      * Creates a new <tt>Conference</tt> in (the associated)
      * <tt>Videobridge</tt>.
      *
-     * @param baseRequest
-     * @param request
-     * @param response
+     * @param baseRequest the original unwrapped {@link Request} object
+     * @param request the request either as the {@code Request} object or a
+     * wrapper of that request
+     * @param response the response either as the {@code Response} object or a
+     * wrapper of that response
      * @throws IOException
      * @throws ServletException
      */
@@ -859,132 +806,16 @@ class HandlerImpl
     }
 
     /**
-     * Gets the <tt>BundleContext</tt> in which this Jetty <tt>Handler</tt> has
-     * been started.
+     * Gets the {@code Videobridge} instance available to this Jetty
+     * {@code Handler}.
      *
-     * @return the <tt>BundleContext</tt> in which this Jetty <tt>Handler</tt>
-     * has been started or <tt>null</tt> if this Jetty <tt>Handler</tt> has not
-     * been started in a <tt>BundleContext</tt>
-     */
-    public BundleContext getBundleContext()
-    {
-        return bundleContext;
-    }
-
-    /**
-     * Analyzes response IQ returned by videobridge handle method and
-     * translates XMPP error into HTTP status code.
-     * @param responseIQ the IQ that is not {@link ColibriConferenceIQ} from
-     *                   which XMPP error will be extracted.
-     * @return HTTP status code
-     */
-    private static int getHttpStatusCodeForResultIq(IQ responseIQ)
-    {
-        XMPPError error = responseIQ.getError();
-        if (XMPPError.Condition.not_authorized.toString()
-            .equals(error.getCondition()))
-        {
-            return HttpServletResponse.SC_UNAUTHORIZED;
-        }
-        else if (XMPPError.Condition.service_unavailable
-            .toString().equals(error.getCondition()))
-        {
-            return HttpServletResponse.SC_SERVICE_UNAVAILABLE;
-        }
-        else
-        {
-            return HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
-        }
-    }
-
-    /**
-     * Gets the <tt>Videobridge</tt> instance available to this Jetty
-     * <tt>Handler</tt>.
-     *
-     * @return the <tt>Videobridge</tt> instance available to this Jetty
-     * <tt>Handler</tt> or <tt>null</tt> if no <tt>Videobridge</tt> instance is
-     * available to this Jetty <tt>Handler</tt>
+     * @return the {@code Videobridge} instance available to this Jetty
+     * {@code Handler} or {@code null} if no {@code Videobridge} instance is
+     * available to this Jetty {@code Handler}
      */
     public Videobridge getVideobridge()
     {
-        BundleContext bundleContext = getBundleContext();
-        Videobridge videobridge;
-
-        if (bundleContext == null)
-        {
-            videobridge = null;
-        }
-        else
-        {
-            videobridge
-                = ServiceUtils.getService(bundleContext, Videobridge.class);
-        }
-        return videobridge;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void handle(
-            String target,
-            Request baseRequest,
-            HttpServletRequest request,
-            HttpServletResponse response)
-        throws IOException,
-               ServletException
-    {
-        // The target starts with "/colibri/".
-        if ((target != null) && target.startsWith(colibriTarget))
-        {
-            target = target.substring(colibriTarget.length());
-
-            // The target ends with ".json".
-            int jsonTargetLength
-                = (jsonTarget == null) ? 0 : jsonTarget.length();
-
-            if ((jsonTargetLength == 0) || target.endsWith(jsonTarget))
-            {
-                target
-                    = target.substring(0, target.length() - jsonTargetLength);
-
-                // All responses to requests for resources under the base
-                // /colibri/ are in JSON format.
-                response.setContentType(JSON_CONTENT_TYPE_WITH_CHARSET);
-                // Cross-origin resource sharing (CORS)
-                response.setHeader("Access-Control-Allow-Origin", "*");
-
-                handleColibriJSON(target, baseRequest, request, response);
-
-                if (!baseRequest.isHandled())
-                {
-                    if (response.getStatus() == 0)
-                        response.setStatus(HttpServletResponse.SC_NOT_FOUND);
-                    baseRequest.setHandled(true);
-                }
-            }
-        }
-        else if ((target != null) && VERSION_TARGET.equals(target))
-        {
-            if (GET_HTTP_METHOD.equals(request.getMethod()))
-            {
-                response.setContentType(JSON_CONTENT_TYPE_WITH_CHARSET);
-                response.setHeader("Access-Control-Allow-Origin", "*");
-
-                doGetVersionJSON(response);
-            }
-            else
-            {
-                response.setStatus(HttpServletResponse.SC_METHOD_NOT_ALLOWED);
-            }
-
-            if (!baseRequest.isHandled())
-            {
-                if (response.getStatus() == 0)
-                    response.setStatus(HttpServletResponse.SC_NOT_FOUND);
-                baseRequest.setHandled(true);
-            }
-        }
+        return getService(Videobridge.class);
     }
 
     /**
@@ -992,10 +823,12 @@ class HandlerImpl
      * <tt>Conference</tt>, <tt>Content</tt>, and <tt>Channel</tt>) represented
      * in JSON format.
      *
-     * @param target
-     * @param baseRequest
-     * @param request
-     * @param response
+     * @param target the target of the request
+     * @param baseRequest the original unwrapped {@link Request} object
+     * @param request the request either as the {@code Request} object or a
+     * wrapper of that request
+     * @param response the response either as the {@code Response} object or a
+     * wrapper of that response
      * @throws IOException
      * @throws ServletException
      */
@@ -1068,9 +901,7 @@ class HandlerImpl
         }
         else if (target.equals(STATISTICS))
         {
-            String requestMethod = request.getMethod();
-
-            if (GET_HTTP_METHOD.equals(requestMethod))
+            if (GET_HTTP_METHOD.equals(request.getMethod()))
             {
                 // Get the VideobridgeStatistics of Videobridge.
                 doGetStatisticsJSON(baseRequest, request, response);
@@ -1088,9 +919,7 @@ class HandlerImpl
                 return;
             }
 
-            String requestMethod = request.getMethod();
-
-            if (POST_HTTP_METHOD.equals(requestMethod))
+            if (POST_HTTP_METHOD.equals(request.getMethod()))
             {
                 // Get the VideobridgeStatistics of Videobridge.
                 doPostShutdownJSON(baseRequest, request, response);
@@ -1103,19 +932,48 @@ class HandlerImpl
     }
 
     /**
-     * Determines whether a specific MIME type of HTTP content specifies a JSON
-     * representation.
-     *
-     * @param contentType the MIME type of HTTP content to determine whether it
-     * specifies a JSON representation
-     * @return <tt>true</tt> if <tt>contentType</tt> stands for a MIME type of
-     * HTTP content which specifies a JSON representation; otherwise,
-     * <tt>false</tt>
+     * {@inheritDoc}
      */
-    private boolean isJSONContentType(String contentType)
+    @Override
+    protected void handleJSON(
+            String target,
+            Request baseRequest,
+            HttpServletRequest request,
+            HttpServletResponse response)
+        throws IOException,
+               ServletException
     {
-        return
-            JSON_CONTENT_TYPE.equals(contentType)
-                || JSON_CONTENT_TYPE_WITH_CHARSET.equals(contentType);
+        super.handleJSON(target, baseRequest, request, response);
+
+        if (baseRequest.isHandled())
+            return; // The super implementation has handled the request.
+
+        // The target starts with "/colibri/".
+        if (target.startsWith(colibriTarget))
+        {
+            target = target.substring(colibriTarget.length());
+
+            // All responses to requests for resources under the base /colibri/
+            // are in JSON format.
+            beginResponse(target, baseRequest, request, response);
+            handleColibriJSON(target, baseRequest, request, response);
+            endResponse(target, baseRequest, request, response);
+        }
+        else
+        {
+            // Initially, we had VERSION_TARGET equal to /version. But such an
+            // HTTP resource could be rewritten by Meet. In order to decrease
+            // the risk of rewriting, we moved the VERSION_TARGET to
+            // /about/version. For the sake of compatiblity though, we are
+            // preserving /version.
+            String versionTarget = "/version";
+
+            if (versionTarget.equals(target))
+            {
+                target = target.substring(versionTarget.length());
+
+                handleVersionJSON(target, baseRequest, request, response);
+            }
+        }
     }
 }

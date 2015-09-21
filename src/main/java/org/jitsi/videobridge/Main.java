@@ -21,7 +21,6 @@ import net.java.sip.communicator.service.protocol.*;
 import net.java.sip.communicator.service.shutdown.*;
 import net.java.sip.communicator.util.*;
 
-
 import org.jitsi.service.neomedia.*;
 import org.jitsi.videobridge.osgi.*;
 import org.jitsi.videobridge.xmpp.*;
@@ -211,7 +210,6 @@ public class Main
          * Jitsi Videobridge, set any System properties which they use and which
          * may be specified by the command-line arguments.
          */
-        
         System.setProperty(VideobridgeManager.HOSTNAME_PNAME, host);
         
         System.setProperty(
