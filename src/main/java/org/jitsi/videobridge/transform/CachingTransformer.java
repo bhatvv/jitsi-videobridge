@@ -208,16 +208,21 @@ public class CachingTransformer
                             + " total requests); "
                             + totalPacketsAdded.get() + " total packets added.");*/
         
+     
+        logger.audit("room-id=" +ComponentImpl.getRoomName() + ", routing_id=" +ComponentImpl.getEndPoint()
+ 		+", Code=Info, Action=CloseCache, "+ "Message="+"Closing. Maximum size reached: "
+        + maxSizeInBytes + " bytes, "
+        + maxSizeInPackets + " packets; "
+        + totalHits + " hits, "
+        + totalMisses + " misses ("
+        + (totalHits.get() + totalMisses.get())
+        + " total requests); "
+        + totalPacketsAdded.get() + " total packets added.");
+
         
-        logger.audit("RTCServer:" +System.getProperty(VideobridgeManager.HOSTNAME_PNAME)+", MucID:"
-     			+ComponentImpl.getRoomName() + ", RoutingID :" +ComponentImpl.getEndPoint() +", Message:"+"Closing. Maximum size reached: "
-                + maxSizeInBytes + " bytes, "
-                + maxSizeInPackets + " packets; "
-                + totalHits + " hits, "
-                + totalMisses + " misses ("
-                + (totalHits.get() + totalMisses.get())
-                + " total requests); "
-                + totalPacketsAdded.get() + " total packets added.");
+        
+        
+        
 
         synchronized (caches)
         {

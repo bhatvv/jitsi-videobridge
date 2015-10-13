@@ -392,14 +392,26 @@ public abstract class Channel
                             + conference.getID() + ". "
                             + videobridge.getConferenceCountString());
                 */
-                logger.audit("RTCServer:" +System.getProperty(VideobridgeManager.HOSTNAME_PNAME)+", MucID:"
+                /*logger.audit("RTCServer:" +System.getProperty(VideobridgeManager.HOSTNAME_PNAME)+", MucID:"
              			+ComponentImpl.getRoomName() + ", RoutingID :" +ComponentImpl.getEndPoint() +", Message:"+ "Expired channel " + getID() + " of content "
                         + content.getName() + " of conference "
-                        + conference.getID() + ". "
-                        + videobridge.getConferenceCountString());
+                        + conference.getID()
+                        + videobridge.getConferenceCountString());*/ 
                 
+                //String room = ComponentImpl.getRoomName().substring(0,ComponentImpl.getRoomName().indexOf('@'));
                 
-            
+                logger.audit("room-id=" +ComponentImpl.getRoomName() + ", routing_id=" +ComponentImpl.getEndPoint()
+         		+", Code=Info, Action=ExpireChannel, "+ "Message="+ "ExpireChannel " + getID() + " of content "
+                + content.getName() + " of conference "
+                + conference.getID()
+                + videobridge.getConferenceCountString()); 
+                
+               if (content.getName().equalsIgnoreCase("data"))
+                {
+                	logger.audit("room-id=" +ComponentImpl.getRoomName() + ", routing_id=" +ComponentImpl.getEndPoint()
+             		 +", Code=Info, Action=RemoveParticipant, "+ "Message=Total Participants left: "+conference.getEndpointCount());
+                }
+               
         }
     }
 
@@ -766,12 +778,20 @@ public abstract class Channel
                             + " of conference "
                             + getContent().getConference().getID());*/
         
-        
+    /*    
         logger.audit("RTCServer:" +System.getProperty(VideobridgeManager.HOSTNAME_PNAME)+", MucID:"
      			+ComponentImpl.getRoomName() + ", RoutingID :" +ComponentImpl.getEndPoint() +", Message:"+"Transport connected for channel " + getID()
                 + " of content " + getContent().getName()
                 + " of conference "
-                + getContent().getConference().getID());
+                + getContent().getConference().getID());*/
+        
+        //String room = ComponentImpl.getRoomName().substring(0,ComponentImpl.getRoomName().indexOf('@'));
+        
+        logger.audit("room-id=" +ComponentImpl.getRoomName() + ", routing_id=" +ComponentImpl.getEndPoint()
+ 		+", Code=Info, Action=TransportConnect, "+ "Message="+"Transport connected for channel " + getID()
+        + " of content " + getContent().getName()
+        + " of conference "
+        + getContent().getConference().getID());
         
         
         

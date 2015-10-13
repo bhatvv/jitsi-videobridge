@@ -269,20 +269,20 @@ public class Content
              * executed outside synchronized blocks in order to reduce the risks
              * of causing deadlocks.
              */
-
-        /* logger.info(
-                    "Created channel " + channel.getID() + " of content "
-                        + getName() + " of conference " + conference.getID()
-                        + ". " + videobridge.getConferenceCountString()+ "Endpoint: "+ComponentImpl.getEndPoint());
-        */
+        
+             logger.audit("room-id=" +ComponentImpl.getRoomName() + ", routing_id=" +ComponentImpl.getEndPoint()
+      		 +", Code=Info, Action=CreateChannel, "+ "Message="+"Created channel " + channel.getID() + " of content "
+              + getName() + " of conference " + conference.getID()
+              + videobridge.getConferenceCountString());
+        	 
+        	 
+        	 if (getName().equalsIgnoreCase("video"))
+             {
+             	logger.audit("room-id=" +ComponentImpl.getRoomName() + ", routing_id=" +ComponentImpl.getEndPoint()
+         		 +", Code=Info, Action=AddParticipant, "+ "Message=Total Participants: "+conference.getEndpointCount());
+             }
          
-         
-         logger.audit("RTCServer:" +System.getProperty(VideobridgeManager.HOSTNAME_PNAME)+", MucID:"
-     			+ComponentImpl.getRoomName() + ", RoutingID :" +ComponentImpl.getEndPoint() +", Message:"+"Created channel " + channel.getID() + " of content "
-                + getName() + " of conference " + conference.getID()
-                + ". " + videobridge.getConferenceCountString()+ "Endpoint: "+ComponentImpl.getEndPoint()
-   			  );
-
+        
         return channel;
     }
 
@@ -394,7 +394,8 @@ public class Content
                 rtcpFeedbackMessageSender = null;
             }
 
-            
+            if (logger.isInfoEnabled())
+            {
                 Videobridge videobridge = conference.getVideobridge();
 
             /*    logger.info(
@@ -404,14 +405,22 @@ public class Content
                 
                 
                 
-                logger.audit("RTCServer:" +System.getProperty(VideobridgeManager.HOSTNAME_PNAME)+", MucID:"
+                /*logger.audit("RTCServer:" +System.getProperty(VideobridgeManager.HOSTNAME_PNAME)+", MucID:"
              			+ComponentImpl.getRoomName() + ", RoutingID :" +ComponentImpl.getEndPoint() +", Message:"+"Expired content " + getName() + " of conference "
                         + conference.getID()
-                        + ". " + videobridge.getConferenceCountString());
+                        + ". " + videobridge.getConferenceCountString());*/
+                
+                
+                //String room = ComponentImpl.getRoomName().substring(0,ComponentImpl.getRoomName().indexOf('@'));
+                
+                logger.audit("room-id=" +ComponentImpl.getRoomName() + ", routing_id=" +ComponentImpl.getEndPoint()
+         		+", Code=Info, Action=ExpireContent, "+ "Message="+"Expired content " + getName() + " of conference "
+                + conference.getID()
+                + ". " + videobridge.getConferenceCountString());
                 
                 
                 
-            
+            }
         }
     }
 

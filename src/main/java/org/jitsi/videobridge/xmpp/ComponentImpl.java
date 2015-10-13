@@ -174,7 +174,8 @@ public class ComponentImpl
     private static String roomName;
 
     public static String getRoomName() {
-		return roomName;
+ 
+    	return roomName;
 	}
     
     

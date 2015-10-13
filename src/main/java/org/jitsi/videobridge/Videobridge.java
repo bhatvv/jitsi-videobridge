@@ -30,7 +30,7 @@ import org.ice4j.stack.*;
 import org.jitsi.service.configuration.*;
 import org.jitsi.service.neomedia.*;
 import org.jitsi.util.*;
-import org.jitsi.util.Logger;
+
 import org.jitsi.videobridge.eventadmin.*;
 import org.jitsi.videobridge.osgi.*;
 import org.jitsi.videobridge.pubsub.*;
@@ -253,10 +253,16 @@ public class Videobridge
                         + ". " + getConferenceCountString()
                     );*/
         
-        logger.audit("RTCServer:" +System.getProperty(VideobridgeManager.HOSTNAME_PNAME)+", MucID:"
+        /*logger.audit("RTCServer:" +System.getProperty(VideobridgeManager.HOSTNAME_PNAME)+", MucID:"
     			+ComponentImpl.getRoomName() + ", RoutingID :" +ComponentImpl.getEndPoint() +", Message:"+
   			  "Created conference " + conference.getID()
-                        + ". " + getConferenceCountString());      
+                        + ". " + getConferenceCountString());*/
+        
+        //String room = ComponentImpl.getRoomName().substring(0,ComponentImpl.getRoomName().indexOf('@'));
+        
+        logger.audit("room-id=" +ComponentImpl.getRoomName() + ", routing_id=" +ComponentImpl.getEndPoint()
+ 		+", Code=Info, Action=CreateConference, "+ "Message="+"Created conference " + conference.getID()
+        + ". " + getConferenceCountString());
 
         return conference;
     }
@@ -314,9 +320,7 @@ public class Videobridge
      */
     private String generateConferenceID()
     {
-    	 String room = ComponentImpl.getRoomName();
-    	
-    	 return (room+System.currentTimeMillis());
+    	 return (ComponentImpl.getRoomName()+System.currentTimeMillis());
     	
 		 //return Long.toHexString(System.currentTimeMillis() + RANDOM.nextLong());
     }

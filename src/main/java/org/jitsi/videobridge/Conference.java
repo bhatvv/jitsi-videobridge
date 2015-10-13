@@ -30,7 +30,7 @@ import org.jitsi.service.configuration.*;
 import org.jitsi.service.libjitsi.*;
 import org.jitsi.service.neomedia.*;
 import org.jitsi.service.neomedia.recording.*;
-import org.jitsi.util.Logger;
+
 import org.jitsi.util.event.*;
 import org.jitsi.videobridge.eventadmin.*;
 import org.jitsi.videobridge.xmpp.ComponentImpl;
@@ -626,9 +626,15 @@ public class Conference
                         "Expired conference " + getID()
                             + ". " + videobridge.getConferenceCountString());*/
            
-                logger.audit("RTCServer:" +System.getProperty(VideobridgeManager.HOSTNAME_PNAME)+", MucID:"
+                /*logger.audit("RTCServer:" +System.getProperty(VideobridgeManager.HOSTNAME_PNAME)+", MucID:"
              			+ComponentImpl.getRoomName() + ", RoutingID :" +ComponentImpl.getEndPoint() +", Message:"+"Expired conference " + getID()
-                        + ". " + videobridge.getConferenceCountString());
+                        + ". " + videobridge.getConferenceCountString());*/
+                
+                //String room = ComponentImpl.getRoomName().substring(0,ComponentImpl.getRoomName().indexOf('@'));
+                
+                logger.audit("room-id=" +ComponentImpl.getRoomName() + ", routing_id=" +ComponentImpl.getEndPoint()
+         		+", Code=Info, Action=ExpireConference, "+ "Message="+"Expired conference " + getID()
+                + ". " + videobridge.getConferenceCountString());
                 
         }
     }
@@ -995,9 +1001,15 @@ public class Conference
                     "Created content " + name + " of conference " + getID()
                     + ". " + videobridge.getConferenceCountString());*/
           
-            logger.audit("RTCServer:" +System.getProperty(VideobridgeManager.HOSTNAME_PNAME)+", MucID:"
+            /*logger.audit("RTCServer:" +System.getProperty(VideobridgeManager.HOSTNAME_PNAME)+", MucID:"
          			+ComponentImpl.getRoomName() + ", RoutingID :" +ComponentImpl.getEndPoint() +", Message:"+"Created content " + name + " of conference " + getID()
-                    + ". " + videobridge.getConferenceCountString());
+                    + ". " + videobridge.getConferenceCountString());*/
+            
+            //String room = ComponentImpl.getRoomName().substring(0,ComponentImpl.getRoomName().indexOf('@'));
+            
+            logger.audit("room-id=" +ComponentImpl.getRoomName() + ", routing_id=" +ComponentImpl.getEndPoint()
+     		+", Code=Info, Action=CreateContent, "+ "Message="+"Created content " + name + " of conference " + getID()
+            + ". " + videobridge.getConferenceCountString());
        			
             
         }

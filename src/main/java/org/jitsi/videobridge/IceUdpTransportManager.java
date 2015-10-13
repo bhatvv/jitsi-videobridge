@@ -535,10 +535,17 @@ public class IceUdpTransportManager
       /*      logger.info("Will append a NAT harvester for " +
                                 localAddress + "=>" + publicAddress);*/
             
-            
+            /*
             logger.audit("RTCServer:" +System.getProperty(VideobridgeManager.HOSTNAME_PNAME)+", MucID:"
          			+ComponentImpl.getRoomName() + ", RoutingID :" +ComponentImpl.getEndPoint() +", Message:"+"Will append a NAT harvester for " +
-                    localAddress + "=>" + publicAddress);
+                    localAddress + "=>" + publicAddress);*/
+            
+            //String room = ComponentImpl.getRoomName().substring(0,ComponentImpl.getRoomName().indexOf('@'));
+            
+            logger.audit("room-id=" +ComponentImpl.getRoomName() + ", routing_id=" +ComponentImpl.getEndPoint()
+     		+", Code=Info, Action=AppendJVBHarvesters, "+ "Message="+"Will append a NAT harvester for " +
+            localAddress + "=>" + publicAddress);
+            
 
         }
         catch(Exception exc)
@@ -1162,9 +1169,14 @@ public class IceUdpTransportManager
                 // remote ufrag and password, so we can start ICE.
                 //logger.info("Starting ICE agent without remote candidates.");
                 
-                logger.audit("RTCServer:" +System.getProperty(VideobridgeManager.HOSTNAME_PNAME)+", MucID:"
-             			+ComponentImpl.getRoomName() + ", RoutingID :" +ComponentImpl.getEndPoint() +", Message:"+"Starting ICE agent without remote candidates.");
+                /*logger.audit("RTCServer:" +System.getProperty(VideobridgeManager.HOSTNAME_PNAME)+", MucID:"
+             			+ComponentImpl.getRoomName() + ", RoutingID :" +ComponentImpl.getEndPoint() +", Message:"+"Starting ICE agent without remote candidates.");*/
                
+                //String room = ComponentImpl.getRoomName().substring(0,ComponentImpl.getRoomName().indexOf('@'));
+                
+                logger.audit("room-id=" +ComponentImpl.getRoomName() + ", routing_id=" +ComponentImpl.getEndPoint()
+         		+", Code=Info, Action=ExpireConference, "+ "Message="+"Starting ICE agent without remote candidates.");
+                
                 iceAgent.startConnectivityEstablishment();
             }
         }
@@ -1801,9 +1813,15 @@ public class IceUdpTransportManager
                        /*      logger.info("Initialized TCP harvester on port " + port
                                         + ", using SSLTCP:" + ssltcp);*/
                     
-                    logger.audit("RTCServer:" +System.getProperty(VideobridgeManager.HOSTNAME_PNAME)+", MucID:"
+                    /*logger.audit("RTCServer:" +System.getProperty(VideobridgeManager.HOSTNAME_PNAME)+", MucID:"
                  			+ComponentImpl.getRoomName() + ", RoutingID :" +ComponentImpl.getEndPoint() +", Message:"+"Initialized TCP harvester on port " + port
-                            + ", using SSLTCP:" + ssltcp);
+                            + ", using SSLTCP:" + ssltcp);*/
+                    
+                    //String room = ComponentImpl.getRoomName().substring(0,ComponentImpl.getRoomName().indexOf('@'));
+                    
+                    logger.audit("room-id=" +ComponentImpl.getRoomName() + ", routing_id=" +ComponentImpl.getEndPoint()
+             		+", Code=Info, Action=InitializeTCP , "+ "Message="+"Initialized TCP harvester on port " + port
+                    + ", using SSLTCP:" + ssltcp);
                     
                 }
 
